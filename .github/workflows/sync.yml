@@ -2,7 +2,7 @@ name: Mirror to Friend's Repository
 
 on:
   push:
-    branches: ['**']
+    branches: [main, master, develop]
 
 jobs:
   mirror:
@@ -13,18 +13,23 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Force Git to Use Token with Credential Store
+    - name: Setup SSH
       env:
-        TOKEN: ${{ secrets.FORK_TOKEN }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
-        # Configure git identity
-        git config user.name "Mirror Bot"
-        git config user.email "mirror-bot@example.com"
-        
-        # FORCE Git to use our token by setting up credential store
-        echo "https://x-access-token:$TOKEN@github.com" > ~/.git-credentials
-        chmod 600 ~/.git-credentials
-        git config --global credential.helper 'store --file=/home/runner/.git-credentials'
-        
-        # Now push - Git will be forced to use our credentials
-        git push https://github.com/yubiStona/RPS-UI-forked.git --all --force --verbose
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+    - name: Configure Git
+      run: |
+        git config user.name "CI/CD Mirror Bot"
+        git config user.email "ci-cd-bot@users.noreply.github.com"
+
+    - name: Mirror to Friend's Repository
+      run: |
+        git remote add friend git@github.com:yubiStona/RPS-UI-forked.git
+        git push friend main --force
+        git push friend --tags --force
