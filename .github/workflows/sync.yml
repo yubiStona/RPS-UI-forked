@@ -13,18 +13,24 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Configure Git
-      run: |
-        git config user.name "GitHub Actions Bot"
-        git config user.email "actions@github.com"
-
-    - name: Mirror to Friend's Repository
+    - name: Create Archive and Push via API
       env:
         TOKEN: ${{ secrets.FORK_TOKEN }}
       run: |
-        # Use the token directly in the push URL (this is the key fix!)
-        git push https://yubiStona:$TOKEN@github.com/yubiStona/RPS-UI-forked.git main --force --verbose
+        # Create a zip archive of the current code
+        zip -r repo-content.zip . -x ".git/*" ".github/*"
         
-        # Alternative: Push current branch
-        # BRANCH_NAME=${GITHUB_REF#refs/heads/}
-        # git push https://yubiStona:$TOKEN@github.com/yubiStona/RPS-UI-forked.git $BRANCH_NAME --force
+        # Get the current branch name
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        
+        # Upload to friend's repository using GitHub API
+        echo "Uploading to yubiStona/RPS-UI-forked on branch $BRANCH_NAME"
+        
+        # Use GitHub API to create a commit
+        curl -X POST \
+          -H "Authorization: token $TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -F "message=Automated mirror from GitHub Actions" \
+          -F "content=@repo-content.zip" \
+          -F "branch=$BRANCH_NAME" \
+          "https://api.github.com/repos/yubiStona/RPS-UI-forked/contents?path=."
