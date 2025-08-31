@@ -13,19 +13,25 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Configure Git
+    - name: Configure Git with Token Authentication
       run: |
         git config user.name "GitHub Actions Bot"
         git config user.email "actions@github.com"
+        
+        # Configure git to use the token for this specific URL
+        git config credential.https://github.com/.helper ""
+        git config credential.https://github.com/.username "yubiStona"
 
     - name: Mirror to Friend's Repository
+      env:
+        TOKEN: ${{ secrets.FORK_TOKEN }}
       run: |
-        # Use this format - token only, no username
-        git remote add friend https://${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
+        # Add remote
+        git remote add friend https://github.com/yubiStona/RPS-UI-forked.git
         
         # Get current branch name
         BRANCH_NAME=${GITHUB_REF#refs/heads/}
         echo "Pushing branch: $BRANCH_NAME"
         
-        # Push with verbose output
-        git push friend $BRANCH_NAME --force --verbose
+        # Push using the token in the environment variable
+        git push https://yubiStona:$TOKEN@github.com/yubiStona/RPS-UI-forked.git $BRANCH_NAME --force --verbose
