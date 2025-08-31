@@ -1,50 +1,31 @@
-name: Debug Mirror Issue
+name: Mirror to Friend's Repository
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master, develop ]
 
 jobs:
-  debug:
+  mirror:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-    - name: Test Repository Access
+    - name: Configure Git
       run: |
-        # Test if we can access the target repo
-        echo "Testing access to friend's repository..."
-        response=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "Authorization: token ${{ secrets.FORK_TOKEN }}" \
-          https://api.github.com/repos/yubiStona/RPS-UI-forked)
-        
-        echo "HTTP Response Code: $response"
-        
-        if [ "$response" -eq 200 ]; then
-          echo "✅ Success: Can access repository"
-        else
-          echo "❌ Error: Cannot access repository (HTTP $response)"
-          exit 1
-        fi
-
-    - name: Configure Git and Test Push
-      run: |
-        git config user.name "GitHub Actions"
+        git config user.name "GitHub Actions Bot"
         git config user.email "actions@github.com"
+
+    - name: Mirror to Friend's Repository
+      run: |
+        # Use this format - token only, no username
+        git remote add friend https://${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
         
-        # Add remote
-        git remote add friend https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
+        # Get current branch name
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        echo "Pushing branch: $BRANCH_NAME"
         
-        # Test push with detailed output
-        echo "Attempting push..."
-        git push friend main --force --verbose 2>&1 | tee push_output.log
-        
-        # Check exit code
-        if [ ${PIPESTATUS[0]} -eq 0 ]; then
-          echo "✅ Push successful!"
-        else
-          echo "❌ Push failed!"
-          cat push_output.log
-          exit 1
-        fi
+        # Push with verbose output
+        git push friend $BRANCH_NAME --force --verbose
