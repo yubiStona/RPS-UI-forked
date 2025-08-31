@@ -11,7 +11,7 @@ jobs:
 
       - name: Push to live's fork
         env:
-  FORK_URL: https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
+          FORK_URL: https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
         run: |
           git remote add fork $FORK_URL
           git push fork main:main --force
