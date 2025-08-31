@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main  # your repo branch that triggers the sync
+      - main
 
 jobs:
   sync:
@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Push to live's fork
+      - name: Push to friend's fork
         env:
           FORK_URL: https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
         run: |
