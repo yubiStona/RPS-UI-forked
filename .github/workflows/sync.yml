@@ -1,36 +1,75 @@
-name: Mirror to Friend's Repository
+name: Ultimate Complete Mirror to Friend's Repository
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: ['**']       # Trigger on push to ANY branch
+    tags: ['**']           # Trigger on push to ANY tag
+  create:
+    branches: ['**']       # Trigger when ANY new branch is created
+  delete:
+    branches: ['**']       # Trigger when ANY branch is deleted
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
+    - name: Checkout with complete history
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0      # Get ALL history
 
-    - name: Create Archive and Push via API
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions Mirror Bot"
+        git config user.email "actions@github.com"
+
+    - name: Mirror Everything
       env:
         TOKEN: ${{ secrets.FORK_TOKEN }}
       run: |
-        # Create a zip archive of the current code
-        zip -r repo-content.zip . -x ".git/*" ".github/*"
+        # Add friend's remote
+        git remote add friend https://x-access-token:$TOKEN@github.com/yubiStona/RPS-UI-forked.git
         
-        # Get the current branch name
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        # Get the event type and ref that triggered the workflow
+        EVENT_TYPE=${{ github.event_name }}
+        REF_NAME=${GITHUB_REF#refs/heads/}
+        FULL_REF=$GITHUB_REF
         
-        # Upload to friend's repository using GitHub API
-        echo "Uploading to yubiStona/RPS-UI-forked on branch $BRANCH_NAME"
+        echo "Event: $EVENT_TYPE, Ref: $FULL_REF"
         
-        # Use GitHub API to create a commit
-        curl -X POST \
-          -H "Authorization: token $TOKEN" \
-          -H "Accept: application/vnd.github.v3+json" \
-          -F "message=Automated mirror from GitHub Actions" \
-          -F "content=@repo-content.zip" \
-          -F "branch=$BRANCH_NAME" \
-          "https://api.github.com/repos/yubiStona/RPS-UI-forked/contents?path=."
+        # Handle different types of events
+        case $EVENT_TYPE in
+          "push")
+            if [[ $FULL_REF == refs/tags/* ]]; then
+              # Tag push - push all tags
+              echo "Pushing all tags..."
+              git push friend --tags --force --verbose
+            else
+              # Branch push - push all branches and tags
+              echo "Pushing all branches and tags..."
+              git push friend --all --force --verbose
+              git push friend --tags --force --verbose
+            fi
+            ;;
+            
+          "create")
+            if [[ $FULL_REF == refs/heads/* ]]; then
+              # New branch created - push this branch
+              echo "Pushing new branch: $REF_NAME"
+              git push friend $REF_NAME --force --verbose
+            fi
+            ;;
+            
+          "delete")
+            if [[ $FULL_REF == refs/heads/* ]]; then
+              # Branch deleted - delete from friend's repo too
+              echo "Deleting branch: $REF_NAME from friend's repo"
+              git push friend --delete $REF_NAME --verbose
+            fi
+            ;;
+        esac
+        
+        # Always ensure everything is in sync
+        echo "Final sync: Ensuring all references are mirrored..."
+        git push friend --all --force --verbose
+        git push friend --tags --force --verbose
