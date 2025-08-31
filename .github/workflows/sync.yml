@@ -13,25 +13,18 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Configure Git with Token Authentication
+    - name: Configure Git
       run: |
         git config user.name "GitHub Actions Bot"
         git config user.email "actions@github.com"
-        
-        # Configure git to use the token for this specific URL
-        git config credential.https://github.com/.helper ""
-        git config credential.https://github.com/.username "yubiStona"
 
     - name: Mirror to Friend's Repository
       env:
         TOKEN: ${{ secrets.FORK_TOKEN }}
       run: |
-        # Add remote
-        git remote add friend https://github.com/yubiStona/RPS-UI-forked.git
+        # Use the token directly in the push URL (this is the key fix!)
+        git push https://yubiStona:$TOKEN@github.com/yubiStona/RPS-UI-forked.git main --force --verbose
         
-        # Get current branch name
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
-        echo "Pushing branch: $BRANCH_NAME"
-        
-        # Push using the token in the environment variable
-        git push https://yubiStona:$TOKEN@github.com/yubiStona/RPS-UI-forked.git $BRANCH_NAME --force --verbose
+        # Alternative: Push current branch
+        # BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        # git push https://yubiStona:$TOKEN@github.com/yubiStona/RPS-UI-forked.git $BRANCH_NAME --force
