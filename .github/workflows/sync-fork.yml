@@ -1,17 +1,28 @@
+name: Sync Repo to Friend's Fork
+
 on:
   push:
     branches:
-      - main
+      - main  # your main branch that triggers the sync
+
+permissions:
+  contents: write  # ensures workflow can push to another repo
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
+    steps:
+      # Step 1: Checkout your repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Push to friend's fork
       - name: Push to friend's fork
         env:
           FORK_URL: https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
         run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote add fork $FORK_URL
           git push fork main:main --force
