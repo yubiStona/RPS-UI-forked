@@ -1,27 +1,50 @@
-name: Mirror to Friend's Repository
+name: Debug Mirror Issue
 
 on:
   push:
-    branches: [ main, master, develop, feature/* ]
+    branches: [ main ]
 
 jobs:
-  mirror:
+  debug:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
-    - name: Configure Git
+    - name: Test Repository Access
       run: |
-        git config user.name "GitHub Actions Bot"
-        git config user.email "actions-bot@github.com"
-
-    - name: Mirror to Friend's Repository
-      run: |
-        # Get the branch name that was pushed
-        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        # Test if we can access the target repo
+        echo "Testing access to friend's repository..."
+        response=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: token ${{ secrets.FORK_TOKEN }}" \
+          https://api.github.com/repos/yubiStona/RPS-UI-forked)
         
+        echo "HTTP Response Code: $response"
+        
+        if [ "$response" -eq 200 ]; then
+          echo "✅ Success: Can access repository"
+        else
+          echo "❌ Error: Cannot access repository (HTTP $response)"
+          exit 1
+        fi
+
+    - name: Configure Git and Test Push
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        
+        # Add remote
         git remote add friend https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
-        git push friend $BRANCH_NAME --force
+        
+        # Test push with detailed output
+        echo "Attempting push..."
+        git push friend main --force --verbose 2>&1 | tee push_output.log
+        
+        # Check exit code
+        if [ ${PIPESTATUS[0]} -eq 0 ]; then
+          echo "✅ Push successful!"
+        else
+          echo "❌ Push failed!"
+          cat push_output.log
+          exit 1
+        fi
