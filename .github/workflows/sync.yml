@@ -13,15 +13,18 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Use Custom Identity
-      run: |
-        # Use a custom identity instead of github-actions[bot]
-        git config user.name "Mirror Bot"
-        git config user.email "mirror-bot@example.com"
-
-    - name: Push to Friend's Repo
+    - name: Force Git to Use Token with Credential Store
       env:
         TOKEN: ${{ secrets.FORK_TOKEN }}
       run: |
-        # Push directly using token in URL (bypasses default auth)
-        git push https://x-access-token:$TOKEN@github.com/yubiStona/RPS-UI-forked.git --all --force
+        # Configure git identity
+        git config user.name "Mirror Bot"
+        git config user.email "mirror-bot@example.com"
+        
+        # FORCE Git to use our token by setting up credential store
+        echo "https://x-access-token:$TOKEN@github.com" > ~/.git-credentials
+        chmod 600 ~/.git-credentials
+        git config --global credential.helper 'store --file=/home/runner/.git-credentials'
+        
+        # Now push - Git will be forced to use our credentials
+        git push https://github.com/yubiStona/RPS-UI-forked.git --all --force --verbose
