@@ -1,0 +1,27 @@
+name: Mirror to Friend's Repository
+
+on:
+  push:
+    branches: [ main, master, develop, feature/* ]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions Bot"
+        git config user.email "actions-bot@github.com"
+
+    - name: Mirror to Friend's Repository
+      run: |
+        # Get the branch name that was pushed
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        
+        git remote add friend https://yubiStona:${{ secrets.FORK_TOKEN }}@github.com/yubiStona/RPS-UI-forked.git
+        git push friend $BRANCH_NAME --force
