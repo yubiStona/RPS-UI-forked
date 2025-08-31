@@ -15,13 +15,6 @@ const uppercasedName = computed(() => name.value.toUpperCase())
     <h1 class="font-semibold text-4xl text-center mt-2 mb-4">
       this is the Result processing System frontend made in vue the dynamic system for the result
       processing and report generation
-
-      test
-      test
-      tesst
-      tesst
-      tesst
-      
     </h1>
 
     <input type="text" v-model="name" />
