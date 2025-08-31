@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - main  # your repo branch that triggers the sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Push to live's fork
+        env:
+          FORK_URL: https://github.com/yubiStona/RPS-UI-forked.git
+        run: |
+          git remote add fork $FORK_URL
+          git push fork main:production --force
