@@ -1,75 +1,27 @@
-name: Ultimate Complete Mirror to Friend's Repository
+name: Mirror to Friend's Repository
 
 on:
   push:
-    branches: ['**']       # Trigger on push to ANY branch
-    tags: ['**']           # Trigger on push to ANY tag
-  create:
-    branches: ['**']       # Trigger when ANY new branch is created
-  delete:
-    branches: ['**']       # Trigger when ANY branch is deleted
+    branches: ['**']
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout with complete history
+    - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0      # Get ALL history
+        fetch-depth: 0
 
-    - name: Configure Git
+    - name: Use Custom Identity
       run: |
-        git config user.name "GitHub Actions Mirror Bot"
-        git config user.email "actions@github.com"
+        # Use a custom identity instead of github-actions[bot]
+        git config user.name "Mirror Bot"
+        git config user.email "mirror-bot@example.com"
 
-    - name: Mirror Everything
+    - name: Push to Friend's Repo
       env:
         TOKEN: ${{ secrets.FORK_TOKEN }}
       run: |
-        # Add friend's remote
-        git remote add friend https://x-access-token:$TOKEN@github.com/yubiStona/RPS-UI-forked.git
-        
-        # Get the event type and ref that triggered the workflow
-        EVENT_TYPE=${{ github.event_name }}
-        REF_NAME=${GITHUB_REF#refs/heads/}
-        FULL_REF=$GITHUB_REF
-        
-        echo "Event: $EVENT_TYPE, Ref: $FULL_REF"
-        
-        # Handle different types of events
-        case $EVENT_TYPE in
-          "push")
-            if [[ $FULL_REF == refs/tags/* ]]; then
-              # Tag push - push all tags
-              echo "Pushing all tags..."
-              git push friend --tags --force --verbose
-            else
-              # Branch push - push all branches and tags
-              echo "Pushing all branches and tags..."
-              git push friend --all --force --verbose
-              git push friend --tags --force --verbose
-            fi
-            ;;
-            
-          "create")
-            if [[ $FULL_REF == refs/heads/* ]]; then
-              # New branch created - push this branch
-              echo "Pushing new branch: $REF_NAME"
-              git push friend $REF_NAME --force --verbose
-            fi
-            ;;
-            
-          "delete")
-            if [[ $FULL_REF == refs/heads/* ]]; then
-              # Branch deleted - delete from friend's repo too
-              echo "Deleting branch: $REF_NAME from friend's repo"
-              git push friend --delete $REF_NAME --verbose
-            fi
-            ;;
-        esac
-        
-        # Always ensure everything is in sync
-        echo "Final sync: Ensuring all references are mirrored..."
-        git push friend --all --force --verbose
-        git push friend --tags --force --verbose
+        # Push directly using token in URL (bypasses default auth)
+        git push https://x-access-token:$TOKEN@github.com/yubiStona/RPS-UI-forked.git --all --force
