@@ -27,9 +27,5 @@ coverage
 *.sln
 *.sw?
 .env
-<<<<<<< HEAD
-
-=======
->>>>>>> e03efc326b18c2e8ce6253b72865a0c1d1951a88
 *.tsbuildinfo
 package-lock.json
