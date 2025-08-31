@@ -14,4 +14,4 @@ jobs:
           FORK_URL: https://github.com/yubiStona/RPS-UI-forked.git
         run: |
           git remote add fork $FORK_URL
-          git push fork main:production --force
+          git push fork main:main --force
